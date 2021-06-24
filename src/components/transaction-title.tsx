@@ -45,7 +45,7 @@ const TitleDetail = ({
   <Box {...rest}>
     <Stack isInline spacing="tight">
       <Tags type={type} />
-      <Status status={status} />
+      <Status status={status as any} />
     </Stack>
   </Box>
 );

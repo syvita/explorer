@@ -6,6 +6,7 @@ import deepEqual from 'fast-deep-equal';
 import { apiClientsState } from '@store/api-clients';
 import { atomFamilyWithQuery, atomWithQuery } from '@store/query';
 import { ApiResponseWithResultsOffset } from '@common/types/api';
+import { QueryRefreshRates } from '@common/constants';
 
 const paginatedResponseOffset = atomFamily(_key => atomWithDefault(() => 0), deepEqual);
 
@@ -54,5 +55,7 @@ export const blocksListState = atomWithQuery<BlocksListResponse>(
 
 export const blocksSingleState = atomFamilyWithQuery<string, Block>(
   BlocksQueryKeys.SINGLE,
-  blocksSingleQueryFn
+  blocksSingleQueryFn,
+  // blocks have no reason to refresh, they are pretty static
+  { refetchInterval: QueryRefreshRates.None }
 );

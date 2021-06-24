@@ -1,12 +1,8 @@
-import React, { useMemo } from 'react';
-import { Flex, Box, Grid } from '@stacks/ui';
+import React from 'react';
+import { Grid } from '@stacks/ui';
 import { NextPage, NextPageContext } from 'next';
-import { Title } from '@components/typography';
 import { Meta } from '@components/meta-head';
-import { SearchComponent } from '@components/search/search';
-
 import { Provider } from 'jotai';
-import { initialDataAtom } from '@store/query';
 import {
   MempoolTransactionsListResponse,
   TransactionQueryKeys,
@@ -16,79 +12,81 @@ import { getApiClients } from '@common/api/client';
 import { BlocksListResponse, BlocksQueryKeys } from '@store/blocks';
 import { BlocksList } from '../features/blocks-list';
 import { TabbedTransactionList } from '@components/tabbed-transaction-list';
-
-const PageTop: React.FC = React.memo(() => (
-  <Flex
-    width="100%"
-    flexDirection="column"
-    alignItems="center"
-    maxWidth={['100%', '100%', 'calc(60% - 32px)']}
-    justify="center"
-  >
-    <Title
-      as="h1"
-      fontSize="36px"
-      display="block"
-      width="100%"
-      textAlign={['center', 'left']}
-      mt="72px"
-      mb="extra-loose"
-      color="white"
-    >
-      Stacks Explorer
-    </Title>
-    <Box width="100%">
-      <SearchComponent />
-    </Box>
-  </Flex>
-));
+import { getOrFetchInitialQueries, usePageQueryInitialValues } from '@common/query';
+import { HomePageTop } from '@components/home-page-top';
 
 interface HomePageData {
-  transactions: TransactionsListResponse;
-  mempool: MempoolTransactionsListResponse;
-  blocks: BlocksListResponse;
+  [key: string]:
+    | TransactionsListResponse
+    | MempoolTransactionsListResponse
+    | BlocksListResponse
+    | boolean
+    | undefined;
+
+  isHome?: boolean;
 }
 
-const Home: NextPage<HomePageData> = ({ transactions, mempool, blocks }) => {
-  const initialValues = useMemo(
-    () => [
-      [initialDataAtom(TransactionQueryKeys.CONFIRMED), transactions] as const,
-      [initialDataAtom(TransactionQueryKeys.MEMPOOL), mempool] as const,
-      [initialDataAtom(BlocksQueryKeys.CONFIRMED), blocks] as const,
-    ],
-    [transactions, mempool, blocks]
+const DEFAULT_LIST_LIMIT = 10;
+const Home: NextPage<HomePageData> = props => {
+  const initialValues = usePageQueryInitialValues(
+    [TransactionQueryKeys.CONFIRMED, TransactionQueryKeys.MEMPOOL, BlocksQueryKeys.CONFIRMED],
+    props
   );
   return (
     <Provider initialValues={initialValues}>
       <Meta />
-      <PageTop />
+      <HomePageTop />
       <Grid
         mt="extra-loose"
         gap="extra-loose"
         gridTemplateColumns={['100%', '100%', 'calc(60% - 32px) 40%']}
         width="100%"
       >
-        <TabbedTransactionList limit={10} />
-        <BlocksList limit={10} />
+        <TabbedTransactionList limit={DEFAULT_LIST_LIMIT} />
+        <BlocksList limit={DEFAULT_LIST_LIMIT} />
       </Grid>
     </Provider>
   );
 };
 
-export async function getServerSideProps(context: NextPageContext) {
+Home.getInitialProps = async (context: NextPageContext): Promise<HomePageData> => {
+  // get our network aware api clients
   const { transactionsApi, blocksApi } = await getApiClients(context);
-  const transactions = await transactionsApi.getTransactionList({});
-  const mempool = await transactionsApi.getMempoolTransactionList({});
-  const blocks = await blocksApi.getBlockList({});
+  // fetch our queries if on server,
+  // else it will check the react-query client cache and if the keys are present
+  // return them (the atoms will auto refresh on mount, so stale data will be updated on navigation
+  const data = await getOrFetchInitialQueries<
+    TransactionsListResponse | MempoolTransactionsListResponse | BlocksListResponse
+  >([
+    // the confirmed transactions
+    [
+      TransactionQueryKeys.CONFIRMED,
+      async () =>
+        (await transactionsApi.getTransactionList({
+          limit: DEFAULT_LIST_LIMIT,
+          offset: 0,
+        })) as TransactionsListResponse,
+    ],
+    // mempool transactions
+    [
+      TransactionQueryKeys.MEMPOOL,
+      async () =>
+        (await transactionsApi.getMempoolTransactionList({
+          limit: DEFAULT_LIST_LIMIT,
+          offset: 0,
+        })) as MempoolTransactionsListResponse,
+    ],
+    // our blocks list
+    [
+      BlocksQueryKeys.CONFIRMED,
+      () => blocksApi.getBlockList({ limit: DEFAULT_LIST_LIMIT, offset: 0 }),
+    ],
+  ]);
 
   return {
-    props: {
-      isHome: true,
-      transactions,
-      mempool,
-      blocks,
-    },
+    isHome: true,
+    ...data,
   };
-}
+};
 
 export default Home;
