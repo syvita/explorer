@@ -4,6 +4,9 @@ import { atomFamilyWithQuery } from '@store/query';
 import type { AccountDataResponse } from '@stacks/stacks-blockchain-api-types';
 import type { Getter } from 'jotai';
 import type { TransactionsListResponse } from '@store/transactions';
+import { atomFamilyWithInfiniteQuery, makeQueryKey } from 'jotai-query-toolkit';
+import { QueryFunctionContext, QueryKey } from 'react-query';
+import { TransactionQueryKeys } from '@store/transactions';
 
 // ----------------
 // keys
@@ -16,6 +19,12 @@ export enum AccountsQueryKeys {
 export function makeAccountInfoKey(txId: string) {
   return [AccountsQueryKeys.ACCOUNT_INFO, txId];
 }
+
+export const getAccountQueryKey = {
+  info: (principal: string): QueryKey => makeQueryKey(AccountsQueryKeys.ACCOUNT_INFO, principal),
+  transactions: (param: [string, number]): QueryKey =>
+    makeQueryKey(AccountsQueryKeys.ACCOUNT_TRANSACTIONS, param),
+};
 
 // ----------------
 // types
@@ -31,11 +40,17 @@ const accountInfoQueryFn = async (get: Getter, principal: string) => {
     proof: 0,
   });
 };
-const accountTransactionsQueryFn = async (get: Getter, principal: string) => {
+const accountTransactionsQueryFn = async (
+  get: Getter,
+  [principal, limit]: [string, number],
+  context: QueryFunctionContext
+) => {
   const { accountsApi } = get(apiClientsState);
+  const { pageParam } = context;
   return (await accountsApi.getAccountTransactions({
     principal,
-    limit: 50,
+    offset: pageParam,
+    limit,
   })) as TransactionsListResponse;
 };
 
@@ -47,7 +62,7 @@ export const accountInfoState = atomFamilyWithQuery<string, AccountDataResponse>
   accountInfoQueryFn
 );
 
-export const accountTransactionsState = atomFamilyWithQuery<string, TransactionsListResponse>(
-  AccountsQueryKeys.ACCOUNT_TRANSACTIONS,
-  accountTransactionsQueryFn
-);
+export const accountTransactionsState = atomFamilyWithInfiniteQuery<
+  [string, number],
+  TransactionsListResponse
+>(AccountsQueryKeys.ACCOUNT_TRANSACTIONS, accountTransactionsQueryFn);

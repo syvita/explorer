@@ -1,149 +1,120 @@
 import * as React from 'react';
-import { Provider } from 'jotai';
 import { TransactionMeta } from '@components/meta/transactions';
 import { TransactionPageComponent } from '@components/transaction-page-component';
 
-import { isPendingTx, queryWith0x } from '@common/utils';
+import { assertConfirmedTransaction, getContractIdFromTx, getTxIdFromCtx } from '@common/utils';
 import { getApiClients } from '@common/api/client';
+import { withInitialQueries } from '@common/with-initial-queries';
 
-import { makeTransactionSingleKey } from '@store/transactions';
-import { makeBlocksSingleKey } from '@store/blocks';
-import {
-  makeContractsInfoQueryKey,
-  makeContractsInterfaceQueryKey,
-  makeContractsSourceQueryKey,
-} from '@store/contracts';
+import { getContractQueryKeys } from '@store/contracts';
+import { getTxQueryKey } from '@store/transactions';
+import { getBlocksQueryKey } from '@store/blocks';
 
-import {
-  getOrFetchInitialQueries,
-  getDataFromQueryArray,
-  useSetCurrentlyInViewInitialData,
-  usePageQueryInitialValues,
-} from '@common/query';
-
-import type { QueryKey } from 'react-query';
 import type { NextPage, NextPageContext } from 'next';
 import type { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
+import type { GetQueries, Queries } from 'jotai-query-toolkit/nextjs';
+import { currentlyInViewState } from '@store/app';
 
 interface TransactionPageData {
   txId: string;
-  blockHash?: string;
-  contractId?: string;
+  initialValues: any;
 }
 
-const TransactionPage: NextPage<TransactionPageData> = props => {
-  const { txId, blockHash, contractId } = props;
-
-  // construct all our keys
-  const keys = [
-    makeTransactionSingleKey(txId),
-    blockHash && makeBlocksSingleKey(blockHash),
-    contractId && makeContractsInterfaceQueryKey(contractId),
-    contractId && makeContractsSourceQueryKey(contractId),
-    contractId && makeContractsInfoQueryKey(contractId),
-  ].filter(item => item) as QueryKey[];
-
-  // construct our initialValues for data
-  const initialValues = usePageQueryInitialValues(keys, props);
-  const currentlyInView = useSetCurrentlyInViewInitialData('tx', txId);
-
+const TransactionPage: NextPage<TransactionPageData> = () => {
   return (
-    <Provider initialValues={[currentlyInView, ...initialValues]}>
+    <>
       <TransactionMeta />
       <TransactionPageComponent />
-    </Provider>
+    </>
   );
 };
 
-// this is our main method for fetching data on the server for any transaction page
-// on initial load, the data will be fetched on the server
-// for subsequent navigations (on the client) the fetching will be done
-// only if there is no data currently in the react-query cache for the given set of query keys
-TransactionPage.getInitialProps = async (
-  context: NextPageContext
-): Promise<TransactionPageData> => {
-  // get our txid
-  // TODO: validate txid here
-  const txId = context?.query?.txid ? queryWith0x(context.query?.txid.toString()) : '';
-  if (txId === '') throw Error('No txid');
-
-  // get our network aware api clients
-  const { transactionsApi, blocksApi, smartContractsApi } = await getApiClients(context);
-
-  // make our first query key
-  const txQueryKey = makeTransactionSingleKey(txId);
-
-  // fetch or get cached query data for transaction
-  const txQueryData = await getOrFetchInitialQueries([
-    [txQueryKey, () => transactionsApi.getTransactionById({ txId })],
-  ]);
-
-  // get the data of the transaction
-  const transaction = getDataFromQueryArray<MempoolTransaction | Transaction>(
-    txQueryKey,
-    txQueryData
-  );
-
-  // this is where we'll store any other queries that we'll have to fetch
-  const initialQueries: [queryKey: QueryKey, fetcher: any][] = [];
-
-  let blockHash: string | undefined;
-  // if it's not pending, we will fetch the anchor block for this transaction
-  if (!isPendingTx(transaction)) {
-    blockHash = (transaction as Transaction).block_hash;
-    // we'll push this query to the array
-    initialQueries.push([
-      makeBlocksSingleKey(blockHash),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      () => blocksApi.getBlockByHash({ hash: blockHash! }),
-    ]);
-    // the nice thing about this is if the user has navigated to a transaction in this block before
-    // or the block itself, we'll have a cached version ready for them
-  }
-
-  // let's check if it has a contract associated with it
-  let contractId: string | undefined = undefined;
-  if (transaction.tx_type === 'contract_call') contractId = transaction.contract_call.contract_id;
-  if (transaction.tx_type === 'smart_contract') contractId = transaction.smart_contract.contract_id;
-
-  // we'll need to fetch data for contract
-  if (contractId) {
-    const [contractAddress, contractName] = contractId.split('.');
-    // add the contract-interface query
-    initialQueries.push([
-      makeContractsInterfaceQueryKey(contractId),
-      () =>
-        smartContractsApi.getContractInterface({
-          contractAddress,
-          contractName,
-        }),
-    ]);
-    // add the contract source query
-    initialQueries.push([
-      makeContractsSourceQueryKey(contractId),
-      () =>
-        smartContractsApi.getContractSource({
-          contractAddress,
-          contractName,
-        }),
-    ]);
-    // add the contract "info" query (includes extra details about the tx)
-    initialQueries.push([
-      makeContractsInfoQueryKey(contractId),
-      () => smartContractsApi.getContractById({ contractId: contractId as string }),
-    ]);
-  }
-
-  // we're going to fetch or return cached values for these queries
-  const data = await getOrFetchInitialQueries(initialQueries);
-
+TransactionPage.getInitialProps = (ctx: NextPageContext) => {
+  const txId = getTxIdFromCtx(ctx);
+  const type = txId.includes('.') ? 'contract_id' : 'tx';
   return {
+    initialValues: [[currentlyInViewState, { type, payload: txId }]],
     txId,
-    contractId,
-    blockHash,
-    ...txQueryData,
-    ...data,
-  } as any;
+  };
 };
 
-export default TransactionPage;
+// this is our function for fetching the transaction being requested
+// the transaction (if found) will be fed as context/props to the getQuerys function
+// so our other queries can depend on it
+const getQueryProps = async (ctx: NextPageContext): Promise<QueryProps> => {
+  const txQuery = getTxIdFromCtx(ctx);
+  const { transactionsApi, smartContractsApi } = await getApiClients(ctx);
+  const isContractId = txQuery.includes('.');
+  if (isContractId) {
+    const contractInfo: // TODO: better type for this response
+    any = await smartContractsApi.getContractById({ contractId: txQuery });
+    const txId = contractInfo.tx_id;
+    const transaction = (await transactionsApi.getTransactionById({ txId })) as
+      | Transaction
+      | MempoolTransaction;
+    return {
+      transaction,
+      contractInfo,
+    };
+  }
+  const transaction = (await transactionsApi.getTransactionById({ txId: txQuery })) as
+    | Transaction
+    | MempoolTransaction;
+  return { transaction };
+};
+
+interface QueryProps {
+  transaction: Transaction | MempoolTransaction;
+  contractInfo?: any;
+}
+
+// this is our function for generating our query keys and fetchers for each key
+const getQueries: GetQueries<QueryProps> = async (
+  // it takes NextPageContext as the first param
+  ctx,
+  // and `queryProps` as the second (comes from `getQueryProps`)
+  queryProps
+): Promise<Queries<QueryProps>> => {
+  if (!queryProps) throw Error('No Query props');
+  const { transaction, contractInfo } = queryProps;
+  // we'll extract our txid from the server context (query param)
+  const txId = transaction.tx_id;
+  // this is an assertion of a confirmed tx or undefined
+  const confirmedTransaction = assertConfirmedTransaction(transaction);
+  // if it's a tx that references a contract, this will be a principal
+  const contractId = getContractIdFromTx(transaction);
+  // we can get our api clients here
+  const { smartContractsApi, blocksApi } = await getApiClients(ctx);
+
+  // our query keys
+  const txQueryKey = getTxQueryKey.single(txId);
+  // if this is undefined, they query won't be fetched
+  const blocksQueryKey =
+    confirmedTransaction && getBlocksQueryKey.single(confirmedTransaction.block_hash);
+  // if this is undefined, they query won't be fetched
+  const contractInfoQueryKey = contractId && getContractQueryKeys.info(contractId);
+
+  // and our final array of query keys and fetchers
+  return [
+    [txQueryKey, () => transaction],
+    [
+      blocksQueryKey,
+      () =>
+        confirmedTransaction && blocksApi.getBlockByHash({ hash: confirmedTransaction.block_hash }),
+    ],
+    [
+      contractInfoQueryKey,
+      () =>
+        contractInfo ||
+        (contractId &&
+          smartContractsApi.getContractById({
+            contractId,
+          })),
+    ],
+  ];
+};
+
+export default withInitialQueries<QueryProps, TransactionPageData>(TransactionPage)(
+  getQueries,
+  getQueryProps
+);

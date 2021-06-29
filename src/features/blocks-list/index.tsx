@@ -7,7 +7,8 @@ import { BlockItem } from './block-list-item';
 import { Caption } from '@components/typography';
 
 export const BlocksList: React.FC<FlexProps & { limit?: number }> = ({ limit, ...props }) => {
-  const blocks = useBlocksList();
+  const result = useBlocksList(limit);
+  const blocks = result.pages[0];
   const hasBlocks = blocks?.results?.length;
   const items = limit ? blocks.results.slice(0, limit) : blocks.results;
   return (

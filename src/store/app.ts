@@ -4,7 +4,14 @@ import { blocksSingleState } from '@store/blocks';
 import { contractInfoState, contractInterfaceState, contractSourceState } from '@store/contracts';
 import { selectAtom } from 'jotai/utils';
 
-export type InViewTypes = 'home' | 'tx' | 'address' | 'transactions' | 'blocks' | 'block';
+export type InViewTypes =
+  | 'home'
+  | 'tx'
+  | 'contract_id'
+  | 'address'
+  | 'transactions'
+  | 'blocks'
+  | 'block';
 
 export interface InView {
   type: InViewTypes;
@@ -15,8 +22,12 @@ export const currentlyInViewState = atom<InView | null>(null);
 
 export const transactionInViewState = atom(get => {
   const inView = get(currentlyInViewState);
-  if (!inView || inView.type !== 'tx') return;
-  return get(transactionSingleState(inView.payload));
+  const isTx = inView?.type === 'tx';
+  const isContractId = inView?.type === 'contract_id';
+  if (!inView || (!isTx && !isContractId)) return;
+  let txId = inView.payload;
+  if (isContractId) txId = get(contractInfoInViewState).tx_id;
+  return get(transactionSingleState(txId));
 });
 
 export const transactionTypeInViewState = selectAtom(
@@ -28,10 +39,9 @@ export const blockHashInView = atom(get => {
   const inView = get(currentlyInViewState);
   if (!inView) return;
   if (inView.type === 'block') return inView.payload;
-  if (inView.type === 'tx') {
-    const tx = get(transactionInViewState);
-    if (tx?.tx_status === 'success') return tx.block_hash;
-  }
+  const tx = get(transactionInViewState);
+  if (!tx || tx?.tx_status !== 'success') return;
+  return tx.block_hash;
 });
 
 export const blockInViewState = atom(get => {
@@ -41,12 +51,13 @@ export const blockInViewState = atom(get => {
 
 const contractPrincipalInViewState = atom(get => {
   const inView = get(currentlyInViewState);
-  if (!inView || inView.type !== 'tx') return;
-  if (inView.type === 'tx') {
-    const tx = get(transactionInViewState);
-    if (tx?.tx_type === 'contract_call') return tx.contract_call.contract_id;
-    if (tx?.tx_type === 'smart_contract') return tx.smart_contract.contract_id;
-  }
+  const isTx = inView?.type === 'tx';
+  const isContractId = inView?.type === 'contract_id';
+  if (!inView || (!isTx && !isContractId)) return;
+  if (isContractId) return inView.payload;
+  const tx = get(transactionInViewState);
+  if (tx?.tx_type === 'contract_call') return tx.contract_call.contract_id;
+  if (tx?.tx_type === 'smart_contract') return tx.smart_contract.contract_id;
 });
 
 export const contractSourceInViewState = atom(get => {

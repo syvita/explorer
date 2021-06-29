@@ -119,3 +119,5 @@ export const QueryRefreshRates: Record<'Default' | 'None', number | false> = {
   Default: DEFAULT_POLLING_INTERVAL,
   None: false,
 };
+
+export const DEFAULT_LIST_LIMIT = 10;

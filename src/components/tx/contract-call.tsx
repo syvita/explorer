@@ -29,9 +29,7 @@ const ContractCallPage = () => {
     <>
       <PageTop tx={transaction as any} />
       <PagePanes
-        fullWidth={
-          info || source?.source ? false : transaction.tx_status === 'pending' || block === null
-        }
+        fullWidth={info || !!source ? false : transaction.tx_status === 'pending' || block === null}
       >
         <Stack spacing="extra-loose">
           <TransactionDetails transaction={transaction} />
@@ -48,10 +46,10 @@ const ContractCallPage = () => {
             conditions={transaction.post_conditions}
             mode={transaction.post_condition_mode}
           />
-          {source?.source && (
+          {source && (
             <ContractSource
               sourceTx={transaction.contract_call.contract_id}
-              source={source.source}
+              source={source}
               contractCall={transaction.contract_call}
             />
           )}

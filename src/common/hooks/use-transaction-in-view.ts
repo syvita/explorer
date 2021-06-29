@@ -7,13 +7,20 @@ import {
   transactionInViewState,
   transactionTypeInViewState,
 } from '@store/app';
+import { transactionSingleState } from '@store/transactions';
 
 export function useTransactionInView() {
   return useAtomValue(transactionInViewState);
 }
+
+export function useTransaction(txid: string) {
+  return useAtomValue(transactionSingleState(txid));
+}
+
 export function useTransactionTypeInView() {
   return useAtomValue(transactionTypeInViewState);
 }
+
 export function useBlockInView() {
   return useAtomValue(blockInViewState);
 }

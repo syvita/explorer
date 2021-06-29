@@ -1,44 +1,55 @@
 import React from 'react';
 import { Box } from '@stacks/ui';
+
 import { Title } from '@components/typography';
 import { Meta } from '@components/meta-head';
-import { NextPage, NextPageContext } from 'next';
 import { TabbedTransactionList } from '@components/tabbed-transaction-list';
-import { getApiClients } from '@common/api/client';
-import { TransactionQueryKeys } from '@store/transactions';
-import { Provider } from 'jotai';
-import { getOrFetchInitialQueries, usePageQueryInitialValues } from '@common/query';
 
-const TransactionsPage: NextPage<any> = props => {
-  const initialValues = usePageQueryInitialValues(
-    [TransactionQueryKeys.CONFIRMED, TransactionQueryKeys.MEMPOOL],
-    props
-  );
+import { withInitialQueries } from '@common/with-initial-queries';
+import { getApiClients } from '@common/api/client';
+
+import { getTxQueryKey } from '@store/transactions';
+
+import type { NextPage } from 'next';
+import type { TransactionsListResponse } from '@store/transactions';
+import type { GetQueries } from 'jotai-query-toolkit/nextjs';
+
+const LIMIT = 30;
+const TransactionsPage: NextPage = () => {
   return (
-    <Provider initialValues={initialValues}>
+    <>
       <Meta title="Recent transactions" />
       <Box mb="base-loose">
         <Title mt="72px" color="white" as="h1" fontSize="36px">
           Transactions
         </Title>
-        <TabbedTransactionList infinite />
+        <TabbedTransactionList limit={LIMIT} />
       </Box>
-    </Provider>
+    </>
   );
 };
 
-TransactionsPage.getInitialProps = async (context: NextPageContext) => {
-  const { transactionsApi } = await getApiClients(context);
-  return getOrFetchInitialQueries([
+const getQueries: GetQueries = async ctx => {
+  const { transactionsApi } = await getApiClients(ctx);
+  return [
     [
-      TransactionQueryKeys.CONFIRMED,
-      () => transactionsApi.getTransactionList({ limit: 10, offset: 0 }),
+      getTxQueryKey.confirmed(LIMIT),
+      async () => {
+        return (await transactionsApi.getTransactionList({
+          limit: LIMIT,
+          offset: 0,
+        })) as TransactionsListResponse;
+      },
     ],
     [
-      TransactionQueryKeys.MEMPOOL,
-      () => transactionsApi.getMempoolTransactionList({ limit: 10, offset: 0 }),
+      getTxQueryKey.mempool(LIMIT),
+      async () => {
+        return (await transactionsApi.getMempoolTransactionList({
+          limit: LIMIT,
+          offset: 0,
+        })) as TransactionsListResponse;
+      },
     ],
-  ]);
+  ];
 };
-
-export default TransactionsPage;
+export default withInitialQueries(TransactionsPage)(getQueries);

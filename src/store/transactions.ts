@@ -1,12 +1,17 @@
 import { apiClientsState } from '@store/api-clients';
-import { atomFamilyWithQuery, atomWithQuery } from '@store/query';
+import {
+  atomFamilyWithInfiniteQuery,
+  atomFamilyWithQuery,
+  makeQueryKey,
+} from 'jotai-query-toolkit';
 
 import type { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 import type { Getter } from 'jotai';
 import type { ApiResponseWithResultsOffset } from '@common/types/api';
 import { atom } from 'jotai';
-import { QueryKey } from 'react-query';
-import { isPendingTx } from '@common/utils';
+import { QueryFunctionContext, QueryKey } from 'react-query';
+import { getNextPageParam } from '@store/common';
+import { DEFAULT_POLLING_INTERVAL } from '@common/constants';
 
 // ----------------
 // keys
@@ -17,9 +22,11 @@ export enum TransactionQueryKeys {
   SINGLE = 'transactions/SINGLE',
 }
 
-export function makeTransactionSingleKey(txId: string): QueryKey {
-  return [TransactionQueryKeys.SINGLE, txId];
-}
+export const getTxQueryKey = {
+  confirmed: (limit: number): QueryKey => makeQueryKey(TransactionQueryKeys.CONFIRMED, limit),
+  mempool: (limit: number): QueryKey => makeQueryKey(TransactionQueryKeys.MEMPOOL, limit),
+  single: (txId: string): QueryKey => makeQueryKey(TransactionQueryKeys.SINGLE, txId),
+};
 
 // ----------------
 // types
@@ -30,19 +37,27 @@ export type MempoolTransactionsListResponse = ApiResponseWithResultsOffset<Mempo
 // ----------------
 // queryFn's
 // ----------------
-const transactionsListQueryFn = async (get: Getter) => {
+const transactionsListQueryFn = async (
+  get: Getter,
+  limit: number,
+  context: QueryFunctionContext
+) => {
   const { transactionsApi } = get(apiClientsState);
-  const { limit, offset } = get(transactionsParamsState);
+  const { pageParam } = context;
   return (await transactionsApi.getTransactionList({
-    offset,
+    offset: pageParam,
     limit,
   })) as TransactionsListResponse; // cast due to limitation in api client
 };
-const mempoolTransactionsListQueryFn = async (get: Getter) => {
+const mempoolTransactionsListQueryFn = async (
+  get: Getter,
+  limit: number,
+  context: QueryFunctionContext
+) => {
   const { transactionsApi } = get(apiClientsState);
-  const { limit, offset } = get(transactionsParamsState);
+  const { pageParam } = context;
   return (await transactionsApi.getMempoolTransactionList({
-    offset,
+    offset: pageParam,
     limit,
   })) as MempoolTransactionsListResponse; // cast due to limitation in api client
 };
@@ -56,22 +71,30 @@ const transactionSingeQueryFn = async (get: Getter, txId: string) => {
 // ----------------
 // atoms
 // ----------------
-export const transactionsListState = atomWithQuery<TransactionsListResponse>(
+
+export const transactionsListState = atomFamilyWithInfiniteQuery<number, TransactionsListResponse>(
   TransactionQueryKeys.CONFIRMED,
   transactionsListQueryFn,
-  { equalityFn: (a, b) => a.results[0].tx_id === b.results[0].tx_id }
+  {
+    equalityFn: (a, b) => a.pages[0].results[0].tx_id === a.pages[0].results[0].tx_id,
+    getNextPageParam,
+    staleTime: DEFAULT_POLLING_INTERVAL * 0.75,
+  }
 );
 
-export const mempoolTransactionsListState = atomWithQuery<MempoolTransactionsListResponse>(
-  TransactionQueryKeys.MEMPOOL,
-  mempoolTransactionsListQueryFn,
-  { equalityFn: (a, b) => a.results[0].tx_id === b.results[0].tx_id }
-);
+export const mempoolTransactionsListState = atomFamilyWithInfiniteQuery<
+  number,
+  MempoolTransactionsListResponse
+>(TransactionQueryKeys.MEMPOOL, mempoolTransactionsListQueryFn, {
+  equalityFn: (a, b) => a.pages[0].results[0].tx_id === a.pages[0].results[0].tx_id,
+  getNextPageParam,
+  staleTime: DEFAULT_POLLING_INTERVAL * 0.75,
+});
 
 export const transactionSingleState = atomFamilyWithQuery<string, MempoolTransaction | Transaction>(
   TransactionQueryKeys.SINGLE,
   transactionSingeQueryFn,
-  { getShouldRefetch: data => isPendingTx(data) }
+  { staleTime: DEFAULT_POLLING_INTERVAL * 0.75 }
 );
 
 export const transactionsLimitState = atom(10);
