@@ -9,6 +9,8 @@ import {
   DEFAULT_TESTNET_INDEX,
   DEFAULT_TESTNET_SERVER,
   MAINNET_CHAIN_ID,
+  MAINNET_MICROBLOCKS_SERVER,
+  MICROBLOCKS_ENABLED,
   NETWORK_CURRENT_INDEX_COOKIE,
   NETWORK_LIST_COOKIE,
   TESTNET_CHAIN_ID,
@@ -30,6 +32,7 @@ import { NetworkModes } from '@common/types/network';
  * is online (mainnet/testnet)
  */
 export const getServerSideApiServer = async (ctx: NextPageContext) => {
+  if (MICROBLOCKS_ENABLED) return MAINNET_MICROBLOCKS_SERVER;
   const chain = ctx.query?.chain;
   const defaultApiServer = DEFAULT_NETWORK_LIST[DEFAULT_NETWORK_INDEX].url;
   // set it to our default network

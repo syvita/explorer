@@ -67,5 +67,5 @@ export const blocksSingleState = atomFamilyWithQuery<string, Block>(
   BlocksQueryKeys.SINGLE,
   blocksSingleQueryFn,
   // blocks have no reason to refresh, they are pretty static
-  { refetchInterval: QueryRefreshRates.None }
+  { refetchInterval: QueryRefreshRates.None, getShouldRefetch: () => false }
 );

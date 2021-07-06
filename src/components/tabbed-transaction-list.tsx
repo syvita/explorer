@@ -141,7 +141,7 @@ function getUniqueListBy<T>(arr: T[], key: keyof T): T[] {
   return [...new Map(arr.map(item => [item[key], item])).values()] as unknown as T[];
 }
 
-const TransactionList = memo<TransactionListProps>(props => {
+const TransactionList = (props: TransactionListProps) => {
   const { data, limit } = props;
   const { results } = data;
   const list = useMemo(() => getUniqueListBy<Item>(results, 'tx_id'), [results]);
@@ -162,7 +162,7 @@ const TransactionList = memo<TransactionListProps>(props => {
       )}
     </>
   );
-});
+};
 
 export const TabbedTransactionList: React.FC<{
   limit?: number;

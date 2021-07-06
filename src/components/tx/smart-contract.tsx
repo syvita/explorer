@@ -16,14 +16,16 @@ import {
   useBlockInView,
   useContractSourceInView,
   useTransactionInView,
-} from '@common/hooks/use-transaction-in-view';
+} from '../../hooks/use-transaction-in-view';
 
 const SmartContractPage = () => {
   const transaction = useTransactionInView();
   const block = useBlockInView();
   const source = useContractSourceInView();
   const accountData: any = undefined;
+
   if (!transaction || transaction.tx_type !== 'smart_contract') return null;
+
   return (
     <>
       <PageTop tx={transaction} />

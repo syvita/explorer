@@ -12,6 +12,19 @@ import { atom } from 'jotai';
 import { QueryFunctionContext, QueryKey } from 'react-query';
 import { getNextPageParam } from '@store/common';
 import { DEFAULT_POLLING_INTERVAL } from '@common/constants';
+import { isPendingTx } from '@common/utils';
+
+// ----------------
+// types
+// ----------------
+export type TransactionsListResponse = ApiResponseWithResultsOffset<Transaction>;
+export type MempoolTransactionsListResponse = ApiResponseWithResultsOffset<MempoolTransaction>;
+export type OptionalTransactionAddress =
+  | { address?: string; recipientAddress?: never; senderAddress?: never }
+  | { recipientAddress?: string; address?: never; senderAddress?: never }
+  | { senderAddress?: string; recipientAddress?: never; address?: never };
+
+export type LimitWithOptionalAddress = [limit: number, options?: OptionalTransactionAddress];
 
 // ----------------
 // keys
@@ -23,23 +36,19 @@ export enum TransactionQueryKeys {
 }
 
 export const getTxQueryKey = {
-  confirmed: (limit: number): QueryKey => makeQueryKey(TransactionQueryKeys.CONFIRMED, limit),
-  mempool: (limit: number): QueryKey => makeQueryKey(TransactionQueryKeys.MEMPOOL, limit),
+  confirmed: (limit: number, options?: OptionalTransactionAddress): QueryKey =>
+    makeQueryKey(TransactionQueryKeys.CONFIRMED, [limit, options]),
+  mempool: (limit: number, options?: OptionalTransactionAddress): QueryKey =>
+    makeQueryKey(TransactionQueryKeys.MEMPOOL, [limit, options]),
   single: (txId: string): QueryKey => makeQueryKey(TransactionQueryKeys.SINGLE, txId),
 };
-
-// ----------------
-// types
-// ----------------
-export type TransactionsListResponse = ApiResponseWithResultsOffset<Transaction>;
-export type MempoolTransactionsListResponse = ApiResponseWithResultsOffset<MempoolTransaction>;
 
 // ----------------
 // queryFn's
 // ----------------
 const transactionsListQueryFn = async (
   get: Getter,
-  limit: number,
+  [limit, options = {}]: LimitWithOptionalAddress,
   context: QueryFunctionContext
 ) => {
   const { transactionsApi } = get(apiClientsState);
@@ -49,9 +58,10 @@ const transactionsListQueryFn = async (
     limit,
   })) as TransactionsListResponse; // cast due to limitation in api client
 };
+
 const mempoolTransactionsListQueryFn = async (
   get: Getter,
-  limit: number,
+  [limit, options = {}]: LimitWithOptionalAddress,
   context: QueryFunctionContext
 ) => {
   const { transactionsApi } = get(apiClientsState);
@@ -59,6 +69,7 @@ const mempoolTransactionsListQueryFn = async (
   return (await transactionsApi.getMempoolTransactionList({
     offset: pageParam,
     limit,
+    ...options,
   })) as MempoolTransactionsListResponse; // cast due to limitation in api client
 };
 const transactionSingeQueryFn = async (get: Getter, txId: string) => {
@@ -72,21 +83,18 @@ const transactionSingeQueryFn = async (get: Getter, txId: string) => {
 // atoms
 // ----------------
 
-export const transactionsListState = atomFamilyWithInfiniteQuery<number, TransactionsListResponse>(
-  TransactionQueryKeys.CONFIRMED,
-  transactionsListQueryFn,
-  {
-    equalityFn: (a, b) => a.pages[0].results[0].tx_id === a.pages[0].results[0].tx_id,
-    getNextPageParam,
-    staleTime: DEFAULT_POLLING_INTERVAL * 0.75,
-  }
-);
+export const transactionsListState = atomFamilyWithInfiniteQuery<
+  LimitWithOptionalAddress,
+  TransactionsListResponse
+>(TransactionQueryKeys.CONFIRMED, transactionsListQueryFn, {
+  getNextPageParam,
+  staleTime: DEFAULT_POLLING_INTERVAL * 0.75,
+});
 
 export const mempoolTransactionsListState = atomFamilyWithInfiniteQuery<
-  number,
+  LimitWithOptionalAddress,
   MempoolTransactionsListResponse
 >(TransactionQueryKeys.MEMPOOL, mempoolTransactionsListQueryFn, {
-  equalityFn: (a, b) => a.pages[0].results[0].tx_id === a.pages[0].results[0].tx_id,
   getNextPageParam,
   staleTime: DEFAULT_POLLING_INTERVAL * 0.75,
 });
@@ -94,7 +102,13 @@ export const mempoolTransactionsListState = atomFamilyWithInfiniteQuery<
 export const transactionSingleState = atomFamilyWithQuery<string, MempoolTransaction | Transaction>(
   TransactionQueryKeys.SINGLE,
   transactionSingeQueryFn,
-  { staleTime: DEFAULT_POLLING_INTERVAL * 0.75 }
+  {
+    staleTime: DEFAULT_POLLING_INTERVAL * 0.75,
+    getShouldRefetch(initialData) {
+      // if it's confirmed, we never need to refetch it
+      return isPendingTx(initialData);
+    },
+  }
 );
 
 export const transactionsLimitState = atom(10);

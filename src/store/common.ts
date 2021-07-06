@@ -1,5 +1,5 @@
 export function getNextPageParam(options: { limit: number; offset: number; total: number }) {
-  if (!options) return;
+  if (!options) return 0;
   const { limit, offset, total } = options;
   const sum = offset + limit;
   const delta = total - sum;

@@ -39,7 +39,7 @@ const contractInfoQueryFn = async (get: Getter, contractId: string) => {
 export const contractInfoState = atomFamilyWithQuery<string, any>(
   ContractsQueryKeys.INFO,
   contractInfoQueryFn,
-  { refetchInterval: QueryRefreshRates.None }
+  { refetchInterval: QueryRefreshRates.None, getShouldRefetch: () => false }
 );
 
 export const contractSourceState = atomFamily<string, string>(contractId =>
