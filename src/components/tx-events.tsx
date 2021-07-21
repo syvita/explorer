@@ -138,7 +138,7 @@ export const ItemIcon = React.memo(({ event }: { event: TransactionEvent }) => {
 const getAssetAmounts = (event: TransactionEvent) => {
   switch (event.event_type) {
     case 'fungible_token_asset':
-      return parseFloat(event.asset.amount).toLocaleString(undefined, {
+      return parseFloat((event as any).asset.amount).toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 6,
       });
@@ -163,26 +163,32 @@ const getAssetEventType = (event: TransactionEvent) => {
 };
 
 const getParticipants = (event: TransactionEvent) => {
-  if ('asset' in event && event.asset) {
-    switch (event.asset.asset_event_type) {
-      case 'transfer': {
-        return (
-          <SenderRecipient
-            sender={event.asset.sender as string}
-            recipient={event.asset.recipient as string}
-          />
-        );
+  if (
+    event.event_type === 'stx_asset' ||
+    event.event_type === 'fungible_token_asset' ||
+    event.event_type === 'non_fungible_token_asset'
+  )
+    if ('asset' in event && event.asset) {
+      switch (event.asset.asset_event_type) {
+        case 'transfer': {
+          return (
+            <SenderRecipient
+              sender={event.asset.sender as string}
+              recipient={event.asset.recipient as string}
+            />
+          );
+        }
+        case 'mint':
+          return event.asset.recipient ? (
+            <Caption>
+              <AddressLink principal={event.asset.recipient}>
+                <Link as="a">{truncateMiddle(event.asset.recipient)}</Link>
+              </AddressLink>
+            </Caption>
+          ) : null;
       }
-      case 'mint':
-        return event.asset.recipient ? (
-          <Caption>
-            <AddressLink principal={event.asset.recipient}>
-              <Link as="a">{truncateMiddle(event.asset.recipient)}</Link>
-            </AddressLink>
-          </Caption>
-        ) : null;
     }
-  } else if ('stx_lock_event' in event && event.stx_lock_event) {
+  if (event.event_type === 'stx_lock') {
     return (
       <Caption>
         <AddressLink principal={event.stx_lock_event.locked_address}>
@@ -191,6 +197,8 @@ const getParticipants = (event: TransactionEvent) => {
       </Caption>
     );
   }
+
+  return null;
 };
 
 // handle if the print is a hex, convert it to string if so

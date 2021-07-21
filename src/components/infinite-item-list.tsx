@@ -3,6 +3,7 @@ import { Box } from '@stacks/ui';
 import { TransactionList } from '@features/transaction-list';
 import { SectionFooterAction } from '@components/section-footer-button';
 import type { InfiniteData } from 'react-query';
+
 import type {
   TransactionsListResponse,
   MempoolTransactionsListResponse,
@@ -16,7 +17,7 @@ export function InfiniteTransactionsList({
   showLoadMoreButton,
   borderOnLast,
 }: {
-  data: InfiniteData<TransactionsListResponse | MempoolTransactionsListResponse>;
+  data: InfiniteData<TransactionsListResponse> | InfiniteData<MempoolTransactionsListResponse>;
   isFetchingNextPage: boolean;
   fetchNextPage: () => void;
   hasNextPage: boolean;

@@ -40,6 +40,7 @@ export const CalledContractDetails = () => {
       <Box>
         <Flex p="base" justifyContent="space-between" alignItems="center">
           <Flex alignItems="center">
+            {/* @ts-ignore TODO: will fix in my PR*/}
             <ItemIcon size="64px" type="tx" txType="smart_contract" status="success" />
             <Box ml="base">
               <Title mb="tight" display="block" mt="0" as="h3">
