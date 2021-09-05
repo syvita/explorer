@@ -1993,12 +1993,12 @@
     sha.js "^2.4.11"
     smart-buffer "^4.1.0"
 
-"@stacks/transactions@2.0.0-beta.0":
-  version "2.0.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@stacks/transactions/-/transactions-2.0.0-beta.0.tgz#7d3d4da699564683e1f2e18626143c615a465686"
-  integrity sha512-k/4EZDOIVlJ3VsIKGdXSEmcCRiRiajxm8v3vPI79vKEYKWpc9roBoh/7j+ntReUBnu2UCcAQQmTwkjRjtfKR3w==
+"@stacks/transactions@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@stacks/transactions/-/transactions-2.0.1.tgz#6a9270d49f2b93067f678fe45474a1d72247d4c1"
+  integrity sha512-q+8nCbn+0m1T8NbGG2sfMcBcCxdaH/F+vgBEHkhMIFHFLYXVYBGYbTX2llGS9StLp/tQq6p2Bfb1kzKFSw8FRQ==
   dependencies:
-    "@stacks/common" "^2.0.0-beta.0"
+    "@stacks/common" "^2.0.1"
     "@stacks/network" "^1.2.2"
     "@types/bn.js" "^4.11.6"
     "@types/elliptic" "^6.4.12"
