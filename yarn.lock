@@ -3667,6 +3667,11 @@ commander@^7.2.0:
   resolved "https://registry.yarnpkg.com/commander/-/commander-7.2.0.tgz#a36cb57d0b501ce108e4d20559a150a391d97ab7"
   integrity sha512-QrWXB+ZQSVPmIWIhtEO9H+gwHaMGYiF5ChvoJ+K9ZGHG/sVsa6yiesAD1GC/x46sET00Xlwo1u49RVVVzvcSkw==
 
+commander@^8.1.0:
+  version "8.1.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-8.1.0.tgz#db36e3e66edf24ff591d639862c6ab2c52664362"
+  integrity sha512-mf45ldcuHSYShkplHHGKWb4TrmwQadxOn7v4WuhDJy0ZVoY5JFajaRDKD0PNe5qXzBX0rhovjTnP6Kz9LETcuA==
+
 commitlint@12.1.4:
   version "12.1.4"
   resolved "https://registry.yarnpkg.com/commitlint/-/commitlint-12.1.4.tgz#afc185957afdd07d2ebb6c78b5956d407fc09ad0"
@@ -6251,11 +6256,6 @@ monaco-editor-textmate@3.0.0:
   resolved "https://registry.yarnpkg.com/monaco-editor-textmate/-/monaco-editor-textmate-3.0.0.tgz#a90517380d5e52304aef780eebeab9f687ab9b67"
   integrity sha512-4BK3ual4WllRpiQBDcBO8NKdbk4ukdBtnl23cRYvu1eNWOWKYOBM0rYac50HvFClSbtd5GMezLPjkaim0iM7sw==
 
-monaco-editor@^0.16.2:
-  version "0.16.2"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.16.2.tgz#950084ed82eeaef1c8c9d3c1bcab849fe11b2415"
-  integrity sha512-NtGrFzf54jADe7qsWh3lazhS7Kj0XHkJUGBq9fA/Jbwc+sgVcyfsYF6z2AQ7hPqDC+JmdOt/OwFjBnRwqXtx6w==
-
 monaco-textmate@3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/monaco-textmate/-/monaco-textmate-3.0.1.tgz#b6d26d266aa12edaff7069dae0d6e3747cba5cd7"
@@ -6263,13 +6263,14 @@ monaco-textmate@3.0.1:
   dependencies:
     fast-plist "^0.1.2"
 
-monaco-vscode-textmate-theme-converter@0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/monaco-vscode-textmate-theme-converter/-/monaco-vscode-textmate-theme-converter-0.1.1.tgz#1c031447eef2ecd141bdebab866cede651882202"
-  integrity sha512-S60iZ32YHUbCmvHJQG+zKp/iuJORaQkdDwAiuJjvem/QQAuNxumx2fk1Q53jQyxkDE6SvusbKzVKTl0hrTUcmQ==
+monaco-vscode-textmate-theme-converter@0.1.7:
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/monaco-vscode-textmate-theme-converter/-/monaco-vscode-textmate-theme-converter-0.1.7.tgz#3860ca08edb65f59354cbca6d301a9b28a663c59"
+  integrity sha512-ZMsq1RPWwOD3pvXD0n+9ddnhfzZoiUMwNIWPNUqYqEiQeH2HjyZ9KYOdt/pqe0kkN8WnYWLrxT9C/SrtIsAu2Q==
   dependencies:
+    commander "^8.1.0"
     fs-extra "^7.0.1"
-    monaco-editor "^0.16.2"
+    tslib "^2.3.0"
 
 monacode@0.3.1:
   version "0.3.1"
