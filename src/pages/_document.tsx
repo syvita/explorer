@@ -38,8 +38,7 @@ export default class MyDocument extends Document<DocumentProps> {
     return (
       <Html lang="en">
         <Head>
-          <meta name="theme-color" content="#6B50FF" media="(prefers-color-scheme: light)" />
-          <meta name="theme-color" content="#362880" media="(prefers-color-scheme: dark)" />
+          <meta name="theme-color" content="#6B50FF" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="#9146FF" />
           <link rel="preconnect" href="https://mainnet.syvita.org" />
