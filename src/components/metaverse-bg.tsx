@@ -19,15 +19,7 @@ const GlobalStyles = () => (
         z-index: 9999;
       }
 
-      html.dark {
-        .metaverse-bg {
-          opacity: 0.5;
-          background-image: url('/mesh.webp');
-          background-size: cover;
-        }
-      }
-
-      html.light {
+      html {
         .metaverse-bg {
           background-image: url('/mesh.webp');
           background-size: cover;

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import * as snippet from '@segment/snippet';
 
 import Document, {
   DocumentContext,
@@ -12,7 +11,6 @@ import Document, {
 } from 'next/document';
 import { extractCritical } from '@emotion/server';
 import { GlobalStyles, ProgressBarStyles, TextAreaOverrides } from '@components/global-styles';
-const { SEGMENT_WRITE_KEY, NODE_ENV } = process.env;
 
 export const THEME_STORAGE_KEY = 'theme';
 
@@ -44,20 +42,40 @@ export default class MyDocument extends Document<DocumentProps> {
           <meta name="theme-color" content="#362880" media="(prefers-color-scheme: dark)" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="#9146FF" />
+          <link rel="preconnect" href="https://mainnet.syvita.org" />
+          <link rel="preconnect" href="https://x.syvita.org" />
+
           <script
             dangerouslySetInnerHTML={{
               __html: `(function () {
   try {
-    var mode = localStorage.getItem('${THEME_STORAGE_KEY}');
-    if (!mode) {
-      document.documentElement.classList.add('light');
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      console.log('dark mode');
+      // dark mode
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
       var bgValue = getComputedStyle(document.documentElement).getPropertyValue('--colors-bg');
       document.documentElement.style.background = bgValue;
     } else {
-      document.documentElement.classList.add(mode);
+      console.log('light mode');
+      // light mode
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
       var bgValue = getComputedStyle(document.documentElement).getPropertyValue('--colors-bg');
       document.documentElement.style.background = bgValue;
     }
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      console.log('detected change. changing to...');
+      const newColorScheme = e.matches ? "dark" : "light";
+      console.log(newColorScheme);
+      const oppositeColorScheme = e.matches ? "light" : "dark";
+
+      document.documentElement.classList.remove(oppositeColorScheme);
+      document.documentElement.classList.add(newColorScheme);
+      var bgValue = getComputedStyle(document.documentElement).getPropertyValue('--colors-bg');
+      document.documentElement.style.background = bgValue;
+    });
   } catch (e) {}
 })();`,
             }}

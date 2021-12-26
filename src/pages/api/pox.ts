@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withSentry } from '@sentry/nextjs';
 import { getPoxAddrForRewardCycle } from '@common/api/pox-helpers';
 
 async function poxHandler({ query: { cycle } }: NextApiRequest, res: NextApiResponse<any>) {
@@ -11,4 +10,4 @@ async function poxHandler({ query: { cycle } }: NextApiRequest, res: NextApiResp
   }
 }
 
-export default withSentry(poxHandler);
+export default poxHandler;

@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withSentry } from '@sentry/nextjs';
 import {
   SITE_NOTICE_BANNER_LABEL,
   SITE_NOTICE_BANNER_MESSAGE,
@@ -23,4 +22,4 @@ function statusHandler(
   }
 }
 
-export default withSentry(statusHandler);
+export default statusHandler;

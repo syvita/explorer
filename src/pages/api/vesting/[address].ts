@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withSentry } from '@sentry/nextjs';
 import DATA from './data.json';
 import LOCKUP from './lockups.json';
 import {
@@ -92,4 +91,4 @@ async function vestingAddressHandler(
   }
 }
 
-export default withSentry(vestingAddressHandler);
+export default vestingAddressHandler;

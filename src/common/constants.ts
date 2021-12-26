@@ -60,12 +60,12 @@ export const CONNECT_AUTH_ORIGIN =
 export const DEFAULT_TESTNET_SERVER =
   config?.NEXT_PUBLIC_TESTNET_API_SERVER ||
   process.env.NEXT_PUBLIC_TESTNET_API_SERVER ||
-  'https://testnet.syv.gd';
+  'https://testnet.syvita.org';
 
 export const DEFAULT_MAINNET_SERVER =
   config?.NEXT_PUBLIC_MAINNET_API_SERVER ||
   process.env.NEXT_PUBLIC_MAINNET_API_SERVER ||
-  'https://mainnet.syv.gd';
+  'https://mainnet.syvita.org';
 
 export const VERSION = config?.VERSION || process.env.VERSION || packageJson.version;
 
