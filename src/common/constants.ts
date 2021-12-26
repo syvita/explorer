@@ -3,6 +3,7 @@ import getConfig from 'next/config';
 import packageJson from '../../package.json';
 
 import { Transaction } from '@stacks/stacks-blockchain-api-types';
+import { TxStatus } from './types/tx';
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -59,12 +60,12 @@ export const CONNECT_AUTH_ORIGIN =
 export const DEFAULT_TESTNET_SERVER =
   config?.NEXT_PUBLIC_TESTNET_API_SERVER ||
   process.env.NEXT_PUBLIC_TESTNET_API_SERVER ||
-  'https://testnet.syv.gd';
+  'https://testnet.syvita.org';
 
 export const DEFAULT_MAINNET_SERVER =
   config?.NEXT_PUBLIC_MAINNET_API_SERVER ||
   process.env.NEXT_PUBLIC_MAINNET_API_SERVER ||
-  'https://mainnet.syv.gd';
+  'https://mainnet.syvita.org';
 
 export const VERSION = config?.VERSION || process.env.VERSION || packageJson.version;
 
@@ -133,3 +134,11 @@ export const TransactionType = {
   COINBASE: 'coinbase' as Transaction['tx_type'],
   POISON_MICROBLOCK: 'poison_microblock' as Transaction['tx_type'],
 } as const;
+
+export const TransactionStatus: Record<string, TxStatus> = {
+  PENDING: 'pending',
+  SUCCESS_ANCHOR_BLOCK: 'success_anchor_block',
+  SUCCESS_MICROBLOCK: 'success_microblock',
+  NON_CANONICAL: 'non_canonical',
+  FAILED: 'failed',
+};

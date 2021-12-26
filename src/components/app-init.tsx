@@ -5,7 +5,7 @@ import { PageWrapper } from '@components/page';
 
 export const AppWrapper: React.FC<{ isHome?: boolean; fullWidth?: boolean }> = React.memo(props => (
   <ThemeProvider>
-    <ColorModeProvider defaultMode="light">
+    <ColorModeProvider>
       <ProgressBar />
       <PageWrapper {...props} />
     </ColorModeProvider>

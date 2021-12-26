@@ -4,7 +4,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
-module.exports = withBundleAnalyzer({
+const moduleExports = withBundleAnalyzer({
   eslint: {
     // Warning: Dangerously allow production builds to successfully complete even if
     // your project has ESLint errors.
@@ -53,3 +53,7 @@ module.exports = withBundleAnalyzer({
     return config;
   },
 });
+
+const nextConfig = moduleExports;
+
+module.exports = nextConfig;
